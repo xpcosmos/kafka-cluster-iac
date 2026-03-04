@@ -50,7 +50,7 @@ resource "google_compute_instance" "kafka" {
   count        = var.cluster_num
   # Esquema de nomeacao de nos [kafka-broker-<indice>]
   name         = "kafka-broker-${count.index}"
-  machine_type = "e2-medium"
+  machine_type = "e2-medium" # 2 vCPUs @ 4 GB RAM
 
   boot_disk {
     initialize_params {
