@@ -20,6 +20,13 @@ locals {
       "kafka-broker-${i}:9093"
     ]
   )
+  bootstrap_servers = join(
+    ",",
+    [
+      for i in range(var.cluster_num) :
+      "kafka-broker-${i}:9092"
+    ]
+  )
 
   # Define dinamicamente parametro de inicializacao de cluster
   # e formatacao para o nos.
