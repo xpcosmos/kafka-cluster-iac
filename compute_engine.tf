@@ -72,10 +72,12 @@ resource "google_compute_instance" "kafka" {
   # aqui apenas por uma questao de conveniencia
   metadata_startup_script = <<EOT
     ############################# Configuracao de VMs #############################
+
     export KAFKA_CLUSTER_ID=${random_uuid.kafka_cluster_id.id}
     export KAFKA_INSTANCE_NUM=${count.index}
     export CONTROLLER_QUORUM_BOOTSTRAP_SERVERS=${local.controller_quorum_bootstrap_servers}
     export INITIAL_CONTROLLERS=${local.initial_controllers}
+    export KAFKA_NUM_PARTITIONS=${var.num_partitions}
 
     ############################### Script Startup ################################
 

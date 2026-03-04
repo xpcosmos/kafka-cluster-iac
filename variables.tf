@@ -14,3 +14,7 @@ variable "cluster_num" {
   default = 3
   type    = number
 }
+variable "num_partitions" {
+  default = 3
+  type    = number
+}
