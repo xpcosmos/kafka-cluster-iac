@@ -109,12 +109,28 @@ resource "google_compute_instance" "kafka-producer" {
   tags = ["kafka", "default-allow-internal"]
 
   metadata_startup_script = <<EOT
-  export BOOTSTRAP_SERVERS=${locals.initial_controllers}
-  sudo echo ${file("terraform/scripts/delivery_tracking_simulator.py")} > /app/delivery_tracking_simulator.py
-  sudo echo ${file("terraform/scripts/producer.py")} > /app/producer.py
-  sudo echo ${file("terraform/scripts/requirements.txt")} > /app/requirements.txt
-  ${file("terraform/scripts/startup.sh")}
+  sudo apt update
+  sudo apt update
+  sudo apt install python3-pip -y
+  sudo mkdir -p app
+  export BOOTSTRAP_SERVERS=${local.initial_controllers}
+
+cat << 'DELIVERY_TRACK' > app/delivery_tracking_simulator.py
+${file("${path.module}/scripts/delivery_tracking_simulator.py")}
+DELIVERY_TRACK
+
+cat << 'PRODUCER_PY_FILE' > app/producer.py
+${file("${path.module}/scripts/producer.py")}
+PRODUCER_PY_FILE
+
+cat << 'REQ' > app/requirements.txt
+${file("${path.module}/scripts/requirements.txt")}
+REQ
+
+  sudo pip install -r app/requirements.txt
+  python3 app/delivery_tracking_simulator.py
   EOT
+
   depends_on = [
     google_compute_instance.kafka
   ]

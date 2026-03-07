@@ -77,7 +77,7 @@ class DeliveryTrackingGenerator:
             self._positions_queue.put(position_update)
             time.sleep(delay)
 
-    def generate_tracking_data(self) -> Generator[DeliveryPosition]:
+    def generate_tracking_data(self) -> Generator[DeliveryPosition, None, None]:
         # Start the background thread for updates
         threading.Thread(target=self._tracking_thread, daemon=True).start()
 
