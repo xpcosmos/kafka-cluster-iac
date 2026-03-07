@@ -74,11 +74,6 @@ sudo sed -i -e "s\
 |num.partitions=$KAFKA_NUM_PARTITIONS\
 |g" $SERVER_PROPERTIES
 
-sudo sed -i -e "s\
-|num.partitions=1\
-|num.partitions=$KAFKA_NUM_PARTITIONS\
-|g" $SERVER_PROPERTIES
-
 sed -i -e "s\
 |$|cleanup.policy=compact\
 |" $SERVER_PROPERTIES
