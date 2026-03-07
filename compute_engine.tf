@@ -54,7 +54,7 @@ locals {
 resource "google_compute_instance" "kafka" {
 
   # Quantidade de nos a serem criados
-  count        = var.cluster_num
+  count = var.cluster_num
   # Esquema de nomeacao de nos [kafka-broker-<indice>]
   name         = "kafka-broker-${count.index}"
   machine_type = "e2-medium" # 2 vCPUs @ 4 GB RAM
@@ -71,7 +71,7 @@ resource "google_compute_instance" "kafka" {
   }
 
   # Tags para permitir configuracao de acesso interno entre VMs
-  tags                    = ["kafka", "default-allow-internal"]
+  tags = ["kafka", "default-allow-internal"]
 
   # Definicao de script de Inicializacao. Esse script ira ser rodado
   # no momento em que VM iniciar. Algumas variaveis sao definidas aqui e compartilhadas
@@ -91,4 +91,31 @@ resource "google_compute_instance" "kafka" {
     ${file("startup.sh")}
 
   EOT
+}
+
+resource "google_compute_instance" "kafka-producer" {
+  name         = "kafka-producer"
+  machine_type = "e2-small"
+  network_interface {
+    network = google_compute_network.kafka_network.id
+  }
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+      size  = 10
+      type  = "pd-standard"
+    }
+  }
+  tags = ["kafka", "default-allow-internal"]
+
+  metadata_startup_script = <<EOT
+  export BOOTSTRAP_SERVERS=${locals.initial_controllers}
+  sudo echo ${file("terraform/scripts/delivery_tracking_simulator.py")} > /app/delivery_tracking_simulator.py
+  sudo echo ${file("terraform/scripts/producer.py")} > /app/producer.py
+  sudo echo ${file("terraform/scripts/requirements.txt")} > /app/requirements.txt
+  ${file("terraform/scripts/startup.sh")}
+  EOT
+  depends_on = [
+    google_compute_instance.kafka
+  ]
 }
