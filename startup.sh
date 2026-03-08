@@ -74,9 +74,8 @@ sudo sed -i -e "s\
 |num.partitions=$KAFKA_NUM_PARTITIONS\
 |g" $SERVER_PROPERTIES
 
-sed -i -e "s\
-|$|cleanup.policy=compact\
-|" $SERVER_PROPERTIES
+sudo sed -i -e "$a\cleanup.policy=compact" $SERVER_PROPERTIES
+
 ############################# Configuracao de Storage #############################
 
 # O atributo `KAFKA_CLUSTER_ID` e `INITIAL_CONTROLLERS` sao definidos no arquivo
@@ -91,4 +90,5 @@ sudo $KAFKA_HOME/bin/kafka-storage.sh \
 ############################ Inicializacao de servidor ############################
 
 sudo $KAFKA_HOME/bin/kafka-server-start.sh -daemon $SERVER_PROPERTIES
+[ $KAFKA_INSTANCE_NUM -eq "1" ] && sudo /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-broker-1:9092 --create --topic teste
 

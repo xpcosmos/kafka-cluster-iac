@@ -28,7 +28,10 @@ try:
     for pos in tracking_gen.generate_tracking_data():
         count += 1
         pos_dict = asdict(pos)
-        print(pos_dict)
         producer.produce("teste", value=json.dumps(pos_dict), key=pos.driver_id)
+        producer.flush()
+        print(pos_dict)
 except KeyboardInterrupt:
     print(f"\nSimulation stopped. {count} tracking updates generated.")
+except Exception as err:
+    print(err)

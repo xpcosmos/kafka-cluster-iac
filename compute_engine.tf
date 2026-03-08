@@ -109,26 +109,34 @@ resource "google_compute_instance" "kafka-producer" {
   tags = ["kafka", "default-allow-internal"]
 
   metadata_startup_script = <<EOT
-  sudo apt update
-  sudo apt update
-  sudo apt install python3-pip -y
-  sudo mkdir -p app
-  export BOOTSTRAP_SERVERS=${local.initial_controllers}
 
-cat << 'DELIVERY_TRACK' > app/delivery_tracking_simulator.py
+export WORKDIR=app
+export VENVPATH=$WORKDIR/.venv
+
+sudo apt update
+sudo apt update
+sudo apt install python3-full -y
+sudo mkdir -p $WORKDIR
+
+
+export BOOTSTRAP_SERVERS=${local.bootstrap_servers}
+
+cat << 'DELIVERY_TRACK' > $WORKDIR/delivery_tracking_simulator.py
 ${file("${path.module}/scripts/delivery_tracking_simulator.py")}
 DELIVERY_TRACK
 
-cat << 'PRODUCER_PY_FILE' > app/producer.py
+cat << 'PRODUCER_PY_FILE' > $WORKDIR/producer.py
 ${file("${path.module}/scripts/producer.py")}
 PRODUCER_PY_FILE
 
-cat << 'REQ' > app/requirements.txt
+cat << 'REQ' > $WORKDIR/requirements.txt
 ${file("${path.module}/scripts/requirements.txt")}
 REQ
 
-  sudo pip install -r app/requirements.txt
-  python3 app/delivery_tracking_simulator.py
+sudo python3 -m venv $VENVPATH
+
+$VENVPATH/bin/pip3 install -r $WORKDIR/requirements.txt
+$VENVPATH/bin/python3 app/producer.py
   EOT
 
   depends_on = [
