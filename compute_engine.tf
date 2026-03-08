@@ -27,10 +27,7 @@ locals {
       "kafka-broker-${i}:9092"
     ]
   )
-
-
-
-
+  
   # Define dinamicamente parametro de inicializacao de cluster
   # e formatacao para o nos.
   # Essse valor e compartilhado com o arquivo `startup.sh`, com
