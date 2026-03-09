@@ -1,0 +1,112 @@
+#!/bin/bash
+
+############################## Instalacao de pacotes ##############################
+
+sudo apt update
+sudo apt install -y default-jdk unzip
+
+############################# Configurações servidor ##############################
+# Arquivo de configuração a ser modificado
+export PATH_SERVER_PROPERTIES="${ kafka_home }/config/server.properties"
+export PATH_CONNECTORS_PROPERTIES="${ kafka_home }/config/connect-standalone.properties"
+export PATH_REDIS_SINK_PROPERTIES="${ kafka_home }/config/redis-sink.properties"
+export KAFKA_BROKER_NAME="kafka-broker-${instance_number}"
+
+# Definicao de valor `advertised.listeners`
+export ADVERTISED_LISTENERS="PLAINTEXT://$KAFKA_BROKER_NAME:9092"
+# Definicao de valor `listeners`
+export LISTENERS="PLAINTEXT://$KAFKA_BROKER_NAME:9092,CONTROLLER://$KAFKA_BROKER_NAME:9093"
+
+
+
+################################ Instalacao Kafka #################################
+
+# Download e extracao do Kafka
+sudo wget https://dlcdn.apache.org/kafka/4.1.1/kafka_2.13-4.1.1.tgz
+sudo tar -xzf /kafka_2.13-4.1.1.tgz
+sudo mv /kafka_2.13-4.1.1 ${ kafka_home }
+sudo rm -rf /kafka_2.13-4.1.1.tgz
+
+# Criacao de pastas e ajustes de permissoes
+sudo mkdir -p ${ log_dirs }
+sudo chown -R $USER:$USER ${ log_dirs }
+
+########################### Modificacao de parametros #############################
+
+# Scripts para substituição de parametros em arquivo de propriedade
+
+sudo sed -i -e "s\
+|node.id=1\
+|node.id=${ instance_number }\
+|g" $PATH_SERVER_PROPERTIES
+
+sudo sed -i -e "s\
+|controller.quorum.bootstrap.servers=localhost:9093\
+|controller.quorum.bootstrap.servers=${ controller_quorum_bootstrap_servers }\
+|g" $PATH_SERVER_PROPERTIES
+
+
+sudo sed -i -e "s\
+|listeners=PLAINTEXT://:9092,CONTROLLER://:9093\
+|listeners=$LISTENERS\
+|g" $PATH_SERVER_PROPERTIES
+
+sudo sed -i -e "s\
+|log.dirs=/tmp/kraft-combined-logs\
+|log.dirs="${ log_dirs }/data"\
+|g" $PATH_SERVER_PROPERTIES
+
+
+sudo sed -i -e "s\
+|advertised.listeners=PLAINTEXT://localhost:9092,CONTROLLER://localhost:9093\
+|advertised.listeners=$ADVERTISED_LISTENERS\
+|g" $PATH_SERVER_PROPERTIES
+
+sudo sed -i -e "s\
+|num.partitions=1\
+|num.partitions=${partitions_num}\
+|g" $PATH_SERVER_PROPERTIES
+
+sudo sed -i -e "$a\cleanup.policy=compact" $PATH_SERVER_PROPERTIES
+
+############################# Configuracao de Storage #############################
+
+sudo ${kafka_home}/bin/kafka-storage.sh \
+  format \
+  -t ${kafka_cluster_id} \
+  -c $PATH_SERVER_PROPERTIES \
+  --initial-controllers ${ initial_controllers }
+
+############################ Inicializacao de servidor ############################
+
+sudo ${kafka_home}/bin/kafka-server-start.sh -daemon $PATH_SERVER_PROPERTIES
+[ ${ instance_number } -eq "1" ] && sudo /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-broker-1:9092 --create --topic teste
+
+############################ Instalacao Kafka Connect #############################
+
+sudo wget https://hub-downloads.confluent.io/api/plugins/redis/redis-kafka-connect/versions/0.9.1/redis-redis-kafka-connect-0.9.1.zip
+sudo unzip redis-redis-kafka-connect-0.9.1.zip
+sudo mv /redis-redis-kafka-connect-0.9.1/lib/ /libs/
+
+sudo sed -i -e "s\
+|bootstrap.servers=localhost:9092\
+|bootstrap.servers=${ bootstrap_servers }\
+|g" $PATH_CONNECTORS_PROPERTIES
+
+sudo sed -i -e "s\
+|key.converter=org.apache.kafka.connect.json.JsonConverter\
+|key.converter=org.apache.kafka.connect.storage.StringConverter\
+|g" $PATH_CONNECTORS_PROPERTIES
+
+sudo sed -i -e "s\
+|.converter.schemas.enable=true\
+|.converter.schemas.enable=false\
+|g" $PATH_CONNECTORS_PROPERTIES
+
+sudo bash -c "echo 'plugin.path=/libs' >> $PATH_CONNECTORS_PROPERTIES"
+
+cat << REDIS > $PATH_REDIS_SINK_PROPERTIES
+${ redis_sink_properties_file }
+REDIS
+
+sudo ${kafka_home}/bin/connect-standalone.sh $PATH_CONNECTORS_PROPERTIES $PATH_REDIS_SINK_PROPERTIES

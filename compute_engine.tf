@@ -77,22 +77,22 @@ resource "google_compute_instance" "kafka" {
   # no momento em que VM iniciar. Algumas variaveis sao definidas aqui e compartilhadas
   # com o script `startup.sh`. A variavel `CONTROLLER_QUORUM_BOOTSTRAP_SERVERS` e definida
   # aqui apenas por uma questao de conveniencia
-  metadata_startup_script = <<EOT
-    ############################# Configuracao de VMs #############################
+  metadata_startup_script = templatefile(
+    "${path.module}/templates/kafka-startup.sh.tmpl",
+    {
+      kafka_cluster_id                    = random_uuid.kafka_cluster_id.id
+      kafka_home                          = "/opt/kafka"
+      instance_number                     = count.index
+      log_dirs                            = "/var/kafka"
+      controller_quorum_bootstrap_servers = local.controller_quorum_bootstrap_servers
+      initial_controllers                 = local.initial_controllers
+      partitions_num                      = var.num_partitions
+      bootstrap_servers                   = local.bootstrap_servers
+      redis_sink_properties_file          = file("${path.module}/properties/redis-sink.properties")
+    }
 
-    export KAFKA_CLUSTER_ID=${random_uuid.kafka_cluster_id.id}
-    export KAFKA_INSTANCE_NUM=${count.index}
-    export CONTROLLER_QUORUM_BOOTSTRAP_SERVERS=${local.controller_quorum_bootstrap_servers}
-    export INITIAL_CONTROLLERS=${local.initial_controllers}
-    export KAFKA_NUM_PARTITIONS=${var.num_partitions}
-    export BOOTSTRAP_SERVERS=${local.bootstrap_servers}
-
-    ############################### Script Startup ################################
-
-    ${file("startup.sh")}
-
-  EOT
-  depends_on              = [google_compute_instance.redis]
+  )
+  depends_on = [google_compute_instance.redis]
 }
 
 resource "google_compute_instance" "kafka-producer" {
@@ -110,7 +110,7 @@ resource "google_compute_instance" "kafka-producer" {
   }
   tags = ["kafka", "default-allow-internal"]
 
-  metadata_startup_script = templatefile("produtor.sh.tmpl",
+  metadata_startup_script = templatefile("${path.module}/templates/produtor.sh.tmpl",
     {
       workdir                            = "app",
       bootstrap_servers                  = local.bootstrap_servers
