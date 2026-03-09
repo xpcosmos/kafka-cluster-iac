@@ -27,7 +27,7 @@ locals {
       "kafka-broker-${i}:9092"
     ]
   )
-  
+
   # Define dinamicamente parametro de inicializacao de cluster
   # e formatacao para o nos.
   # Essse valor e compartilhado com o arquivo `startup.sh`, com
@@ -85,12 +85,14 @@ resource "google_compute_instance" "kafka" {
     export CONTROLLER_QUORUM_BOOTSTRAP_SERVERS=${local.controller_quorum_bootstrap_servers}
     export INITIAL_CONTROLLERS=${local.initial_controllers}
     export KAFKA_NUM_PARTITIONS=${var.num_partitions}
+    export BOOTSTRAP_SERVERS=${local.bootstrap_servers}
 
     ############################### Script Startup ################################
 
     ${file("startup.sh")}
 
   EOT
+  depends_on              = [google_compute_instance.redis]
 }
 
 resource "google_compute_instance" "kafka-producer" {
@@ -121,4 +123,21 @@ resource "google_compute_instance" "kafka-producer" {
   depends_on = [
     google_compute_instance.kafka
   ]
+}
+
+resource "google_compute_instance" "redis" {
+  name         = "redis"
+  machine_type = "e2-medium"
+  network_interface {
+    network = google_compute_network.kafka_network.id
+  }
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+      size  = 10
+      type  = "pd-standard"
+    }
+  }
+  tags                    = ["kafka", "default-allow-internal"]
+  metadata_startup_script = file("redis-install.sh")
 }

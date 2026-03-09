@@ -8,7 +8,7 @@ variable "project_region" {
 }
 variable "project_zone" {
   type    = string
-  default = "us-central1-c"
+  default = "us-central1-b"
 }
 variable "cluster_num" {
   default = 3

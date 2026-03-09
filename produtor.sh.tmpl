@@ -9,17 +9,17 @@ sudo python3 -m venv $VENVPATH
 
 export BOOTSTRAP_SERVERS=${bootstrap_servers}
 
-cat << 'DELIVERY_TRACK' > $WORKDIR/delivery_tracking_simulator.py
+cat << 'DELIVERY_TRACK' > ${workdir}/delivery_tracking_simulator.py
 ${delivery_tracking_simulator_script}
 DELIVERY_TRACK
 
-cat << 'PRODUCER_PY_FILE' > $WORKDIR/producer.py
+cat << 'PRODUCER_PY_FILE' > ${workdir}/producer.py
 ${ producer_script }
 PRODUCER_PY_FILE
 
-cat << 'REQ' > $WORKDIR/requirements.txt
+cat << 'REQ' > ${workdir}/requirements.txt
 ${ requirements_file }
 REQ
 
-$VENVPATH/bin/pip3 install -r $WORKDIR/requirements.txt
-$VENVPATH/bin/python3 app/producer.py
+$VENVPATH/bin/pip3 install -r ${workdir}/requirements.txt
+$VENVPATH/bin/python3 ${workdir}/producer.py
