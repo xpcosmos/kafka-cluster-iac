@@ -71,7 +71,7 @@ resource "google_compute_instance" "kafka" {
   }
 
   # Tags para permitir configuracao de acesso interno entre VMs
-  tags = ["kafka", "default-allow-internal"]
+  tags = ["kafka", "default-allow-internal","deny-incoming"]
 
   # Definicao de script de Inicializacao. Esse script ira ser rodado
   # no momento em que VM iniciar. Algumas variaveis sao definidas aqui e compartilhadas
@@ -89,6 +89,7 @@ resource "google_compute_instance" "kafka" {
       partitions_num                      = var.num_partitions
       bootstrap_servers                   = local.bootstrap_servers
       redis_sink_properties_file          = file("${path.module}/properties/redis-sink.properties")
+      prometheus_kafka_config_file        = file("${path.module}/properties/kafka_config.yml")
     }
 
   )
@@ -108,7 +109,7 @@ resource "google_compute_instance" "kafka-producer" {
       type  = "pd-standard"
     }
   }
-  tags = ["kafka", "default-allow-internal"]
+  tags = ["kafka", "default-allow-internal","deny-incoming"]
 
   metadata_startup_script = templatefile("${path.module}/templates/produtor.sh.tmpl",
     {
@@ -138,6 +139,39 @@ resource "google_compute_instance" "redis" {
       type  = "pd-standard"
     }
   }
-  tags                    = ["kafka", "default-allow-internal"]
+  tags                    = ["kafka", "default-allow-internal","deny-incoming"]
   metadata_startup_script = file("redis-install.sh")
+}
+
+resource "google_compute_instance" "prometheus" {
+  name         = "prometheus"
+  machine_type = "e2-medium"
+  network_interface {
+    network = google_compute_network.kafka_network.id
+    access_config {
+      nat_ip = google_compute_address.external_ip_address.address
+    }
+
+  }
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+      size  = 10
+      type  = "pd-standard"
+    }
+  }
+  tags                    = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus"]
+  metadata_startup_script = <<EOT
+  ${file("prometheus-install.sh")}
+EOT
+}
+resource "google_compute_address" "external_ip_address" {
+  name         = "external-ip-static"
+  address_type = "EXTERNAL"
+  network_tier = "PREMIUM"
+}
+
+output "instance_external_ip" {
+  value       = google_compute_address.external_ip_address.address
+  description = "The static external IP address of the VM instance"
 }

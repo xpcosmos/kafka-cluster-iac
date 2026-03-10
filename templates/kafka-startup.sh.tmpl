@@ -1,17 +1,39 @@
 #!/bin/bash
-
 ############################## Instalacao de pacotes ##############################
 
 sudo apt update
 sudo apt install -y default-jdk unzip
+
+############################ Download de dependencias #############################
+
+# Kafka
+sudo wget https://dlcdn.apache.org/kafka/4.1.1/kafka_2.13-4.1.1.tgz
+
+# JMX Kafka para monitoramento
+sudo wget https://github.com/prometheus/jmx_exporter/releases/download/1.5.0/jmx_prometheus_javaagent-1.5.0.jar
+
+# Redis Kafka Connect
+sudo wget https://hub-downloads.confluent.io/api/plugins/redis/redis-kafka-connect/versions/0.9.1/redis-redis-kafka-connect-0.9.1.zip
+
+
+############################### Extracao de arquivos ###############################
+
+# Unzip de Kafka Connect
+sudo unzip redis-redis-kafka-connect-0.9.1.zip
+sudo mv /redis-redis-kafka-connect-0.9.1/lib/ /libs/
+
+sudo tar -xzf /kafka_2.13-4.1.1.tgz
+sudo mv /kafka_2.13-4.1.1 ${ kafka_home }
+sudo rm -rf /kafka_2.13-4.1.1.tgz
 
 ############################# Configurações servidor ##############################
 # Arquivo de configuração a ser modificado
 export PATH_SERVER_PROPERTIES="${ kafka_home }/config/server.properties"
 export PATH_CONNECTORS_PROPERTIES="${ kafka_home }/config/connect-standalone.properties"
 export PATH_REDIS_SINK_PROPERTIES="${ kafka_home }/config/redis-sink.properties"
-export KAFKA_BROKER_NAME="kafka-broker-${instance_number}"
+export PATH_PROMETHEUS_KAFKA_CONFIG="/prometheus/rules/kafka_config.yml"
 
+export KAFKA_BROKER_NAME="kafka-broker-${instance_number}"
 # Definicao de valor `advertised.listeners`
 export ADVERTISED_LISTENERS="PLAINTEXT://$KAFKA_BROKER_NAME:9092"
 # Definicao de valor `listeners`
@@ -22,14 +44,15 @@ export LISTENERS="PLAINTEXT://$KAFKA_BROKER_NAME:9092,CONTROLLER://$KAFKA_BROKER
 ################################ Instalacao Kafka #################################
 
 # Download e extracao do Kafka
-sudo wget https://dlcdn.apache.org/kafka/4.1.1/kafka_2.13-4.1.1.tgz
-sudo tar -xzf /kafka_2.13-4.1.1.tgz
-sudo mv /kafka_2.13-4.1.1 ${ kafka_home }
-sudo rm -rf /kafka_2.13-4.1.1.tgz
 
 # Criacao de pastas e ajustes de permissoes
 sudo mkdir -p ${ log_dirs }
+sudo mkdir -p /prometheus/rules
 sudo chown -R $USER:$USER ${ log_dirs }
+
+cat << 'KAFKA_CONFIG' > $PATH_PROMETHEUS_KAFKA_CONFIG
+${ prometheus_kafka_config_file }
+KAFKA_CONFIG
 
 ########################### Modificacao de parametros #############################
 
@@ -79,14 +102,11 @@ sudo ${kafka_home}/bin/kafka-storage.sh \
 
 ############################ Inicializacao de servidor ############################
 
-sudo ${kafka_home}/bin/kafka-server-start.sh -daemon $PATH_SERVER_PROPERTIES
+sudo KAFKA_OPTS="-javaagent:/jmx_prometheus_javaagent-1.5.0.jar=8091:$PATH_PROMETHEUS_KAFKA_CONFIG" ${kafka_home}/bin/kafka-server-start.sh -daemon $PATH_SERVER_PROPERTIES
 [ ${ instance_number } -eq "1" ] && sudo /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-broker-1:9092 --create --topic teste
 
 ############################ Instalacao Kafka Connect #############################
 
-sudo wget https://hub-downloads.confluent.io/api/plugins/redis/redis-kafka-connect/versions/0.9.1/redis-redis-kafka-connect-0.9.1.zip
-sudo unzip redis-redis-kafka-connect-0.9.1.zip
-sudo mv /redis-redis-kafka-connect-0.9.1/lib/ /libs/
 
 sudo sed -i -e "s\
 |bootstrap.servers=localhost:9092\
@@ -109,4 +129,4 @@ cat << REDIS > $PATH_REDIS_SINK_PROPERTIES
 ${ redis_sink_properties_file }
 REDIS
 
-sudo ${kafka_home}/bin/connect-standalone.sh $PATH_CONNECTORS_PROPERTIES $PATH_REDIS_SINK_PROPERTIES
+sudo ${kafka_home}/bin/connect-standalone.sh -daemon $PATH_CONNECTORS_PROPERTIES $PATH_REDIS_SINK_PROPERTIES
