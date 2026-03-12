@@ -122,9 +122,9 @@ resource "google_compute_instance" "kafka-producer" {
     {
       workdir                            = "app",
       bootstrap_servers                  = local.bootstrap_servers
-      delivery_tracking_simulator_script = file("${path.module}/scripts/delivery_tracking_simulator.py")
-      producer_script                    = file("${path.module}/scripts/producer.py")
-      requirements_file                  = file("${path.module}/scripts/requirements.txt")
+      delivery_tracking_simulator_script = file("${path.module}/producer/delivery_tracking_simulator.py")
+      producer_script                    = file("${path.module}/producer/producer.py")
+      requirements_file                  = file("${path.module}/producer/requirements.txt")
     }
   )
 
@@ -148,7 +148,7 @@ resource "google_compute_instance" "redis" {
     }
   }
   tags                    = ["kafka", "default-allow-internal", "deny-incoming"]
-  metadata_startup_script = file("redis-install.sh")
+  metadata_startup_script = file("${path.module}/scripts/redis-install.sh")
 }
 
 resource "google_compute_instance" "prometheus" {
@@ -170,7 +170,7 @@ resource "google_compute_instance" "prometheus" {
   }
   tags                    = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus"]
   metadata_startup_script = <<EOT
-  ${file("prometheus-install.sh")}
+  ${file("${path.module}/scripts/prometheus-install.sh")}
 EOT
 }
 resource "google_compute_address" "external_ip_address" {
