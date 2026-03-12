@@ -68,10 +68,11 @@ resource "google_compute_instance" "kafka" {
   }
   network_interface {
     network = google_compute_network.kafka_network.id
+    access_config {}
   }
 
   # Tags para permitir configuracao de acesso interno entre VMs
-  tags = ["kafka", "default-allow-internal","deny-incoming"]
+  tags = ["kafka", "default-allow-internal", "deny-incoming"]
 
   # Definicao de script de Inicializacao. Esse script ira ser rodado
   # no momento em que VM iniciar. Algumas variaveis sao definidas aqui e compartilhadas
@@ -88,8 +89,13 @@ resource "google_compute_instance" "kafka" {
       initial_controllers                 = local.initial_controllers
       partitions_num                      = var.num_partitions
       bootstrap_servers                   = local.bootstrap_servers
-      redis_sink_properties_file          = file("${path.module}/properties/redis-sink.properties")
-      prometheus_kafka_config_file        = file("${path.module}/properties/kafka_config.yml")
+      redis_sink_properties_file          = file("${path.module}/properties/redis-sink.properties.tmpl")
+      connector_properties_file = templatefile("${path.module}/properties/connect-standalone.properties.tmpl",
+        {
+          bootstrap_servers = local.bootstrap_servers
+        }
+      )
+      prometheus_kafka_config_file = file("${path.module}/properties/kafka_config.yml")
     }
 
   )
@@ -101,6 +107,7 @@ resource "google_compute_instance" "kafka-producer" {
   machine_type = "e2-small"
   network_interface {
     network = google_compute_network.kafka_network.id
+    access_config {}
   }
   boot_disk {
     initialize_params {
@@ -109,7 +116,7 @@ resource "google_compute_instance" "kafka-producer" {
       type  = "pd-standard"
     }
   }
-  tags = ["kafka", "default-allow-internal","deny-incoming"]
+  tags = ["kafka", "default-allow-internal", "deny-incoming"]
 
   metadata_startup_script = templatefile("${path.module}/templates/produtor.sh.tmpl",
     {
@@ -131,6 +138,7 @@ resource "google_compute_instance" "redis" {
   machine_type = "e2-medium"
   network_interface {
     network = google_compute_network.kafka_network.id
+    access_config {}
   }
   boot_disk {
     initialize_params {
@@ -139,7 +147,7 @@ resource "google_compute_instance" "redis" {
       type  = "pd-standard"
     }
   }
-  tags                    = ["kafka", "default-allow-internal","deny-incoming"]
+  tags                    = ["kafka", "default-allow-internal", "deny-incoming"]
   metadata_startup_script = file("redis-install.sh")
 }
 

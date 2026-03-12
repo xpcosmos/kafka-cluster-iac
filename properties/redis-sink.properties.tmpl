@@ -1,0 +1,18 @@
+
+############################# Configuracoes Gerais #############################
+
+name=RedisKafkaSinkConnector
+connector.class=com.redis.kafka.connect.RedisSinkConnector
+topics=teste
+redis.database=0
+redis.timeout=60
+
+#################################### Rede ######################################
+
+redis.host=redis
+redis.port=6379
+redis.uri=redis://redis:6379
+
+################################ Key & Value ####################################
+
+redis.command=JSONSET

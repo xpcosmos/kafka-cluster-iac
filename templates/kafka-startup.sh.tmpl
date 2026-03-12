@@ -29,7 +29,7 @@ sudo rm -rf /kafka_2.13-4.1.1.tgz
 ############################# Configurações servidor ##############################
 # Arquivo de configuração a ser modificado
 export PATH_SERVER_PROPERTIES="${ kafka_home }/config/server.properties"
-export PATH_CONNECTORS_PROPERTIES="${ kafka_home }/config/connect-standalone.properties"
+export PATH_CONNECTORS_PROPERTIES="${ kafka_home }/config/custom-connector.properties"
 export PATH_REDIS_SINK_PROPERTIES="${ kafka_home }/config/redis-sink.properties"
 export PATH_PROMETHEUS_KAFKA_CONFIG="/prometheus/rules/kafka_config.yml"
 
@@ -90,43 +90,61 @@ sudo sed -i -e "s\
 |num.partitions=${partitions_num}\
 |g" $PATH_SERVER_PROPERTIES
 
-sudo sed -i -e "$a\cleanup.policy=compact" $PATH_SERVER_PROPERTIES
-
 ############################# Configuracao de Storage #############################
 
 sudo ${kafka_home}/bin/kafka-storage.sh \
   format \
-  -t ${kafka_cluster_id} \
-  -c $PATH_SERVER_PROPERTIES \
+  -t ${ kafka_cluster_id }\
+  -c $PATH_SERVER_PROPERTIES\
   --initial-controllers ${ initial_controllers }
 
 ############################ Inicializacao de servidor ############################
 
 sudo KAFKA_OPTS="-javaagent:/jmx_prometheus_javaagent-1.5.0.jar=8091:$PATH_PROMETHEUS_KAFKA_CONFIG" ${kafka_home}/bin/kafka-server-start.sh -daemon $PATH_SERVER_PROPERTIES
-[ ${ instance_number } -eq "1" ] && sudo /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-broker-1:9092 --create --topic teste
+sudo /opt/kafka/bin/kafka-topics.sh --bootstrap-server $KAFKA_BROKER_NAME:9092 --create --topic teste
 
 ############################ Instalacao Kafka Connect #############################
 
-
-sudo sed -i -e "s\
-|bootstrap.servers=localhost:9092\
-|bootstrap.servers=${ bootstrap_servers }\
-|g" $PATH_CONNECTORS_PROPERTIES
-
-sudo sed -i -e "s\
-|key.converter=org.apache.kafka.connect.json.JsonConverter\
-|key.converter=org.apache.kafka.connect.storage.StringConverter\
-|g" $PATH_CONNECTORS_PROPERTIES
-
-sudo sed -i -e "s\
-|.converter.schemas.enable=true\
-|.converter.schemas.enable=false\
-|g" $PATH_CONNECTORS_PROPERTIES
-
-sudo bash -c "echo 'plugin.path=/libs' >> $PATH_CONNECTORS_PROPERTIES"
+sudo bash -c "echo 'cleanup.policy=compact' >> $PATH_SERVER_PROPERTIES"
 
 cat << REDIS > $PATH_REDIS_SINK_PROPERTIES
 ${ redis_sink_properties_file }
 REDIS
 
-sudo ${kafka_home}/bin/connect-standalone.sh -daemon $PATH_CONNECTORS_PROPERTIES $PATH_REDIS_SINK_PROPERTIES
+cat << CONNECTOR_STANDALONE > $PATH_CONNECTORS_PROPERTIES
+${ connector_properties_file }
+CONNECTOR_STANDALONE
+
+sudo ${kafka_home}/bin/connect-distributed.sh -daemon  $PATH_CONNECTORS_PROPERTIES $PATH_REDIS_SINK_PROPERTIES
+
+export TIME_TO_RETRY=2
+
+while [ "$(curl -o /dev/null -s -w '%%{http_code}' http://$KAFKA_BROKER_NAME:8083/connectors)" -ne 200 ]
+do
+  sleep $TIME_TO_RETRY
+  (( TIME_TO_RETRY *= 2 ))
+done
+
+sudo curl -X POST http://$KAFKA_BROKER_NAME:8083/connectors \
+  -H "Content-Type: application/json" \
+  -w "\n" \
+  --data @- << 'REQUEST'
+{
+  "name": "RedisKafkaSinkConnector",
+  "config": {
+    "connector.class": "com.redis.kafka.connect.RedisSinkConnector",
+    "tasks.max": "1",
+    "topics": "teste",
+    "redis.uri": "redis://redis:6379",
+    "redis.type": "JSON",
+    "redis.command": "JSONSET",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+    "key.converter.schemas.enable": "false"
+  }
+}
+REQUEST
+
+
+
