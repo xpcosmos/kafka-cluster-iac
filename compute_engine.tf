@@ -95,7 +95,7 @@ resource "google_compute_instance" "kafka" {
           bootstrap_servers = local.bootstrap_servers
         }
       )
-      prometheus_kafka_config_file = file("${path.module}/properties/kafka_config.yml")
+      prometheus_kafka_config_file = file("${path.module}/prometheus/kafka_config.yml")
     }
 
   )
