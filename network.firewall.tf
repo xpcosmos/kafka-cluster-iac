@@ -61,11 +61,15 @@ resource "google_compute_firewall" "allow-in-prometheus" {
   name        = "allow-in-prometheus"
   network     = google_compute_network.kafka_network.id
   source_tags = ["allow-in-prometheus"]
-  priority    = 150
+  priority    = 50
 
   allow {
     protocol = "tcp"
     ports    = ["9090"]
+  }
+  allow {
+    protocol = "tcp"
+    ports    = ["3000"]
   }
   source_ranges = ["0.0.0.0/0"]
 }

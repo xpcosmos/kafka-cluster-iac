@@ -90,9 +90,10 @@ resource "google_compute_instance" "kafka" {
       partitions_num                      = var.num_partitions
       bootstrap_servers                   = local.bootstrap_servers
       redis_sink_properties_file          = file("${path.module}/properties/redis-sink.properties.tmpl")
-      connector_properties_file = templatefile("${path.module}/properties/connect-standalone.properties.tmpl",
+      connector_properties_file = templatefile("${path.module}/properties/connect.properties.tmpl",
         {
-          bootstrap_servers = local.bootstrap_servers
+          bootstrap_servers = local.bootstrap_servers,
+          group_id = "kafka-connect"
         }
       )
       prometheus_kafka_config_file = file("${path.module}/prometheus/kafka_config.yml")
@@ -173,6 +174,29 @@ resource "google_compute_instance" "prometheus" {
   ${file("${path.module}/scripts/prometheus-install.sh")}
 EOT
 }
+
+resource "google_compute_instance" "grafana" {
+  name         = "grafana"
+  machine_type = "e2-medium"
+  network_interface {
+    network = google_compute_network.kafka_network.id
+    access_config {
+      nat_ip = google_compute_address.external_ip_address_grafana.address
+    }
+
+  }
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+      size  = 10
+      type  = "pd-standard"
+    }
+  }
+  tags                    = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus"]
+  metadata_startup_script = <<EOT
+  ${file("${path.module}/scripts/grafana-install.sh")}
+EOT
+}
 resource "google_compute_address" "external_ip_address" {
   name         = "external-ip-static"
   address_type = "EXTERNAL"
@@ -181,5 +205,15 @@ resource "google_compute_address" "external_ip_address" {
 
 output "instance_external_ip" {
   value       = google_compute_address.external_ip_address.address
+  description = "The static external IP address of the VM instance"
+}
+
+resource "google_compute_address" "external_ip_address_grafana" {
+  name         = "external-ip-static-grafana"
+  address_type = "EXTERNAL"
+  network_tier = "PREMIUM"
+}
+output "external_ip_address_grafana" {
+  value       = google_compute_address.external_ip_address_grafana.address
   description = "The static external IP address of the VM instance"
 }
