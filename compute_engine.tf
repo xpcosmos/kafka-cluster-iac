@@ -93,7 +93,7 @@ resource "google_compute_instance" "kafka" {
       connector_properties_file = templatefile("${path.module}/properties/connect.properties.tmpl",
         {
           bootstrap_servers = local.bootstrap_servers,
-          group_id = "kafka-connect"
+          group_id          = "kafka-connect"
         }
       )
       prometheus_kafka_config_file = file("${path.module}/prometheus/kafka_config.yml")
@@ -183,7 +183,6 @@ resource "google_compute_instance" "grafana" {
     access_config {
       nat_ip = google_compute_address.external_ip_address_grafana.address
     }
-
   }
   boot_disk {
     initialize_params {
@@ -192,11 +191,39 @@ resource "google_compute_instance" "grafana" {
       type  = "pd-standard"
     }
   }
-  tags                    = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus"]
-  metadata_startup_script = <<EOT
-  ${file("${path.module}/scripts/grafana-install.sh")}
-EOT
+  metadata = {
+    ssh-keys = "mikeiasoliveira:${file("${path.module}/.keys/keys.pub")}"
+  }
+  provisioner "remote-exec" {
+    inline = ["echo 'SSH is up!'"]
+  }
+  provisioner "file" {
+    source =   "${path.module}/grafana/dashboards"
+    destination = "/tmp/dashboards"
+  }
+  provisioner "remote-exec" {
+    inline = [
+        "sudo mkdir -p /var/lib/grafana",
+        "sudo mv /tmp/dashboards /var/lib/grafana/dashboards",
+        "sudo chown -R grafana:grafana /var/lib/grafana/dashboards"
+    ]
 }
+  tags = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus"]
+  metadata_startup_script = templatefile("${path.module}/scripts/grafana-install.sh.tmpl",
+    {
+      dashboard_yml : file("${path.module}/grafana/provisioning/dashboards/dashboard.yml")
+      datasources_yml : file("${path.module}/grafana/provisioning/datasources/datasource.yml")
+    }
+  )
+    connection {
+      type        = "ssh"
+      user        = "mikeiasoliveira"
+      private_key = file("${path.module}/.keys/keys")
+      host        = self.network_interface[0].access_config[0].nat_ip
+    }
+
+}
+
 resource "google_compute_address" "external_ip_address" {
   name         = "external-ip-static"
   address_type = "EXTERNAL"
