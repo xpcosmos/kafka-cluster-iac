@@ -37,4 +37,5 @@ locals {
 locals {
   redis_sink_connect_filename = "${var.kafka_home}/config/redis-sink.properties"
   connector_properties_filename = "${var.kafka_home}/config/connect.properties"
+  prometheus_properties_filename = "${var.kafka_home}/config/connect.properties"
 }

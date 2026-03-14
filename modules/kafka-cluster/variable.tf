@@ -11,16 +11,6 @@ variable "topics" {
   type = string
 }
 
-variable "prometheus_properties_path" {
-  type = string
-}
-variable "connector_properties_path" {
-  type = string
-}
-variable "redis_sink_properties_path" {
-  type = string
-}
-
 variable "redis_sink" {
   type    = object({
     host = string
