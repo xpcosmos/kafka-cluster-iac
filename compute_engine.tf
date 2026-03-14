@@ -44,7 +44,7 @@ resource "google_compute_instance" "kafka" {
   # no momento em que VM iniciar. Algumas variaveis sao definidas aqui e compartilhadas
   # com o script `startup.sh`. A variavel `CONTROLLER_QUORUM_BOOTSTRAP_SERVERS` e definida
   # aqui apenas por uma questao de conveniencia
-  metadata_startup_script = each.value.rendered
+  metadata_startup_script = each.value
   depends_on = [google_compute_instance.redis]
 }
 

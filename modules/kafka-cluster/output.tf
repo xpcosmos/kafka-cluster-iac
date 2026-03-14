@@ -12,5 +12,5 @@ output "cluster_id" {
 }
 
 output "cluster_instance" {
-  value = data.cloudinit_config.metadata_startup_script
+  value = local.configs
 }
