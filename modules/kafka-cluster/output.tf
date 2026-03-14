@@ -4,6 +4,9 @@ output "quorum_bootstrap_servers" {
 output "bootstrap_servers" {
   value = local.bootstrap_servers
 }
+output "brokers" {
+  value = local.brokers
+}
 output "initial_controllers" {
   value = local.initial_controllers
 }
