@@ -16,7 +16,7 @@ locals {
   dir_id = [
     for i in random_bytes.uuid_binary :
     replace(
-      replace(  
+      replace(
         replace(i.base64, "+", "-"),
         "/", "_"
       ),

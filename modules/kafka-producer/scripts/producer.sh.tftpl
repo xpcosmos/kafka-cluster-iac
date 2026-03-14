@@ -1,0 +1,21 @@
+#!/bin/bash
+
+export VENVPATH="${workdir}/.venv"
+
+sudo apt update
+sudo apt install python3-full -y
+sudo mkdir -p ${workdir}
+
+sudo python3 -m venv $VENVPATH
+
+%{ for file in files ~}
+
+cat << 'EOT' > "${workdir}/${file.name}"
+${file.content}
+EOT
+%{ endfor ~}
+
+echo > "BOOTSTRAP_SERVERS=${ join(",", bootstrap_servers) }" > "${workdir}/.env"
+
+$VENVPATH/bin/pip3 install -r ${workdir}/requirements.txt
+$VENVPATH/bin/python3 ${workdir}/producer.py

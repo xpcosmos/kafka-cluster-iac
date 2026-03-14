@@ -4,6 +4,9 @@ from dataclasses import asdict
 import json
 import socket
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 count = 0
 
@@ -11,7 +14,7 @@ UPDATES_PER_SEC = 5
 NUM_DRIVERS = 5
 
 conf = {
-    "bootstrap.servers": os.getenv("BOOTSTRAP_SERVERS") or "kafka-broker-1:9092,kafka-broker-0:9092,kafka-broker-1:9092",
+    "bootstrap.servers": os.getenv("BOOTSTRAP_SERVERS"),
     "client.id": socket.gethostname(),
 }
 

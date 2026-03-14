@@ -1,5 +1,8 @@
 
-
+module "kafka_producer_app" {
+  source = "./modules/kafka-producer"
+  bootstrap_servers = module.kafka_cluster_server.bootstrap_servers
+}
 
 module "kafka_cluster_server" {
   source = "./modules/kafka-cluster"
@@ -64,15 +67,7 @@ resource "google_compute_instance" "kafka-producer" {
   }
   tags = ["kafka", "default-allow-internal", "deny-incoming"]
 
-  metadata_startup_script = templatefile("${path.module}/templates/produtor.sh.tmpl",
-    {
-      workdir                            = "app",
-      bootstrap_servers                  = join(",",module.kafka_cluster_server.bootstrap_servers)
-      delivery_tracking_simulator_script = file("${path.module}/producer/delivery_tracking_simulator.py")
-      producer_script                    = file("${path.module}/producer/producer.py")
-      requirements_file                  = file("${path.module}/producer/requirements.txt")
-    }
-  )
+  metadata_startup_script = module.kafka_producer_app.script
 
   depends_on = [
     google_compute_instance.kafka
