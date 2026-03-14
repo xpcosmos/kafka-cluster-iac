@@ -1,13 +1,13 @@
 
 module "kafka_producer_app" {
-  source = "./modules/kafka-producer"
+  source            = "./modules/kafka-producer"
   bootstrap_servers = module.kafka_cluster_server.bootstrap_servers
 }
 
 module "kafka_cluster_server" {
-  source = "./modules/kafka-cluster"
-  controller = {port = 9093}
-  broker = {port = 9092}
+  source     = "./modules/kafka-cluster"
+  controller = { port = 9093 }
+  broker     = { port = 9092 }
   connect = {
     group_id = "kafka_connect"
   }
@@ -24,7 +24,7 @@ module "kafka_cluster_server" {
 
 resource "google_compute_instance" "kafka" {
 
-  for_each = module.kafka_cluster_server.cluster_instance
+  for_each     = module.kafka_cluster_server.cluster_instance
   name         = each.key
   machine_type = "e2-medium" # 2 vCPUs @ 4 GB RAM
 
@@ -48,7 +48,7 @@ resource "google_compute_instance" "kafka" {
   # com o script `startup.sh`. A variavel `CONTROLLER_QUORUM_BOOTSTRAP_SERVERS` e definida
   # aqui apenas por uma questao de conveniencia
   metadata_startup_script = each.value
-  depends_on = [google_compute_instance.redis]
+  depends_on              = [google_compute_instance.redis]
 }
 
 resource "google_compute_instance" "kafka-producer" {
@@ -138,15 +138,15 @@ resource "google_compute_instance" "grafana" {
     inline = ["echo 'SSH is up!'"]
   }
   provisioner "file" {
-    source =   "${path.module}/grafana/dashboards"
+    source      = "${path.module}/grafana/dashboards"
     destination = "/tmp/dashboards"
   }
   provisioner "remote-exec" {
     inline = [
-        "sudo mkdir -p /var/lib/grafana",
-        "sudo mv /tmp/dashboards /var/lib/grafana/dashboards",
+      "sudo mkdir -p /var/lib/grafana",
+      "sudo mv /tmp/dashboards /var/lib/grafana/dashboards",
     ]
-}
+  }
   tags = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus"]
   metadata_startup_script = templatefile("${path.module}/scripts/grafana-install.sh.tmpl",
     {
@@ -154,12 +154,12 @@ resource "google_compute_instance" "grafana" {
       datasources_yml : file("${path.module}/grafana/provisioning/datasources/datasource.yml")
     }
   )
-    connection {
-      type        = "ssh"
-      user        = "mikeiasoliveira"
-      private_key = file("${path.module}/.keys/keys")
-      host        = self.network_interface[0].access_config[0].nat_ip
-    }
+  connection {
+    type        = "ssh"
+    user        = "mikeiasoliveira"
+    private_key = file("${path.module}/.keys/keys")
+    host        = self.network_interface[0].access_config[0].nat_ip
+  }
 
 }
 
