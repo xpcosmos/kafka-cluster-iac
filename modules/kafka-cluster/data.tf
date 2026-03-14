@@ -26,9 +26,10 @@ data "cloudinit_config" "foobar" {
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/scripts/format-kafka-storage.sh",
       {
-        kafka_home          = var.kafka_home
-        initial_controllers = local.initial_controllers
-        cluster_id          = random_uuid.kafka_cluster_id.id
+        kafka_home                       = var.kafka_home
+        initial_controllers              = local.initial_controllers
+        kafka_server_properties_filename = local.kafka_server_properties_filename
+        cluster_id                       = random_uuid.kafka_cluster_id.id
       }
     )
   }
@@ -44,7 +45,7 @@ data "cloudinit_config" "foobar" {
     )
   }
 
-  part { 
+  part {
     filename     = "setup-kafka-redis-connect.sh"
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/scripts/setup-kafka-redis-connect.sh",
