@@ -21,7 +21,7 @@ node.id=${node_id}
 log.dirs=${log_dirs}
 num.partitions=${partitions_num}
 advertised.listeners=PLAINTEXT://${broker_name}:${broker.port}
-controller.quorum.bootstrap.servers=${quorum_bootstrap_servers}
+controller.quorum.bootstrap.servers=${ join(",", quorum_bootstrap_servers)}
 listeners=PLAINTEXT://${broker_name}:${broker.port},CONTROLLER:${broker_name}//:${controller.port}
 
 

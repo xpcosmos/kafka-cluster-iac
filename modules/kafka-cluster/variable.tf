@@ -25,18 +25,16 @@ variable "connect" {
 }
 
 variable "controller" {
-  default = object({
+  default = {
     port = 9093
-  })
+  }
   type = object({
     port = number
   })
 }
 
 variable "broker" {
-  default = object({
-    port = 9092
-  })
+  default = {port = 9092}
   type = object({
     port = number
   })

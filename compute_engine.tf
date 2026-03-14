@@ -5,6 +5,15 @@ module "kafka_cluster_server" {
   source = "./modules/kafka-cluster"
   controller = {port = 9093}
   broker = {port = 9092}
+  connect = {
+    group_id = "kafka_connect"
+  }
+  topics = "teste"
+  redis_sink = {
+    host = "redis"
+    port = 6379
+  }
+  cluster_size = 3
 }
 
 
@@ -12,9 +21,8 @@ module "kafka_cluster_server" {
 
 resource "google_compute_instance" "kafka" {
 
-  for_each = module.kafka_cluster_server.bootstrap_servers
-  count = var.cluster_num
-  name         = each.value
+  for_each = module.kafka_cluster_server.cluster_instance
+  name         = each.key
   machine_type = "e2-medium" # 2 vCPUs @ 4 GB RAM
 
   boot_disk {
@@ -36,28 +44,7 @@ resource "google_compute_instance" "kafka" {
   # no momento em que VM iniciar. Algumas variaveis sao definidas aqui e compartilhadas
   # com o script `startup.sh`. A variavel `CONTROLLER_QUORUM_BOOTSTRAP_SERVERS` e definida
   # aqui apenas por uma questao de conveniencia
-  metadata_startup_script = templatefile(
-    "${path.module}/templates/kafka-startup.sh.tmpl",
-    {
-      kafka_cluster_id                    = random_uuid.kafka_cluster_id.id
-      kafka_home                          = "/opt/kafka"
-      instance_number                     = count.index
-      log_dirs                            = "/var/kafka"
-      controller_quorum_bootstrap_servers = local.controller_quorum_bootstrap_servers
-      initial_controllers                 = local.initial_controllers
-      partitions_num                      = var.num_partitions
-      bootstrap_servers                   = local.bootstrap_servers
-      redis_sink_properties_file          = file("${path.module}/properties/redis-sink.properties.tmpl")
-      connector_properties_file = templatefile("${path.module}/properties/connect.properties.tmpl",
-        {
-          bootstrap_servers = local.bootstrap_servers,
-          group_id          = "kafka-connect"
-        }
-      )
-      prometheus_kafka_config_file = file("${path.module}/prometheus/kafka_config.yml")
-    }
-
-  )
+  metadata_startup_script = each.value.rendered
   depends_on = [google_compute_instance.redis]
 }
 
@@ -80,7 +67,7 @@ resource "google_compute_instance" "kafka-producer" {
   metadata_startup_script = templatefile("${path.module}/templates/produtor.sh.tmpl",
     {
       workdir                            = "app",
-      bootstrap_servers                  = local.bootstrap_servers
+      bootstrap_servers                  = join(",",module.kafka_cluster_server.bootstrap_servers)
       delivery_tracking_simulator_script = file("${path.module}/producer/delivery_tracking_simulator.py")
       producer_script                    = file("${path.module}/producer/producer.py")
       requirements_file                  = file("${path.module}/producer/requirements.txt")
@@ -163,7 +150,6 @@ resource "google_compute_instance" "grafana" {
     inline = [
         "sudo mkdir -p /var/lib/grafana",
         "sudo mv /tmp/dashboards /var/lib/grafana/dashboards",
-        "sudo chown -R grafana:grafana /var/lib/grafana/dashboards"
     ]
 }
   tags = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus"]
