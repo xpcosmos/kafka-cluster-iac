@@ -50,9 +50,9 @@ data "cloudinit_config" "foobar" {
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/scripts/setup-kafka-redis-connect.sh",
       {
-        redis_sink_properties_path    = var.redis_sink_properties_path
+        redis_sink_properties_filename    = local.redis_sink_connect_filename
         redis_sink_properties_content = templatefile("${path.module}/properties/redis-sink.properties.tfpl", merge(var.redis_sink, { topics = var.topics }))
-        connector_properties_path     = var.connector_properties_path
+        connector_properties_filename     = local.connector_properties_filename
         connector_properties_content  = templatefile("${path.module}/properties/redis-sink.properties.tfpl", merge(var.redis_sink, { topics = var.topics }))
       }
     )

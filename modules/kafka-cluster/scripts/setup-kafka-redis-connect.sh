@@ -5,10 +5,10 @@ sudo wget https://hub-downloads.confluent.io/api/plugins/redis/redis-kafka-conne
 sudo unzip redis-redis-kafka-connect-0.9.1.zip
 sudo mv /redis-redis-kafka-connect-0.9.1/lib/ /libs/
 
-cat << REDIS > ${kafka_home}/config/
+cat << REDIS > ${redis_sink_properties_filename}
 ${ redis_sink_properties_content }
 REDIS
 
-cat << CONNECTOR_STANDALONE > ${connector_properties_path}
+cat << CONNECTOR_STANDALONE > ${connector_properties_filename}
 ${ connector_properties_content }
 CONNECTOR_STANDALONE
