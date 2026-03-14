@@ -1,0 +1,78 @@
+
+data "cloudinit_config" "foobar" {
+
+  gzip          = false
+  base64_encode = false
+  for_each      = local.brokers
+
+  part {
+    filename     = "init.sh"
+    content_type = "text/x-shellscript"
+    content      = file("${path.module}/scripts/init.sh")
+  }
+
+  part {
+    filename     = "install-kafka.sh"
+    content_type = "text/x-shellscript"
+    content = templatefile("${path.module}/scripts/install-kafka.sh",
+      {
+        kafka_home = var.kafka_home
+        log_dirs   = var.log_dirs
+      }
+    )
+  }
+  part {
+    filename     = "setup-kafka-storage.sh"
+    content_type = "text/x-shellscript"
+    content = templatefile("${path.module}/scripts/format-kafka-storage.sh",
+      {
+        kafka_home          = var.kafka_home
+        bootstrap_servers   = join(",", local.bootstrap_servers)
+        initial_controllers = join(",", local.initial_controllers)
+        cluster_id          = random_uuid.kafka_cluster_id.id
+      }
+    )
+  }
+
+  part {
+    filename     = "setup-prometheus.sh"
+    content_type = "text/x-shellscript"
+    content = templatefile("${path.module}/scripts/setup-prometheus.sh",
+      {
+        prometheus_properties_path = var.prometheus_properties_path
+        prometheus_properties      = file("${path.module}/prometheus/kafka_config.yml")
+      }
+    )
+  }
+
+  part {
+    filename     = "setup-kafka-redis-connect.sh"
+    content_type = "text/x-shellscript"
+    content = templatefile("${path.module}/scripts/setup-kafka-redis-connect.sh",
+      {
+        redis_sink_properties_path    = var.redis_sink_properties_path
+        redis_sink_properties_content = templatefile("${path.module}/properties/redis-sink.properties.tfpl", merge(var.redis_sink, { topics = var.topics }))
+        connector_properties_path     = var.connector_properties_path
+        connector_properties_content  = templatefile("${path.module}/properties/redis-sink.properties.tfpl", merge(var.redis_sink, { topics = var.topics }))
+      }
+    )
+  }
+  part {
+    filename     = "setup-kafka-redis-connect.sh"
+    content_type = "text/x-shellscript"
+    content = templatefile("${path.module}/scripts/setup-kafka-redis-connect.sh",
+      {
+        prometheus_properties_path    = var.prometheus_properties_path
+        kafka_home                    = var.kafka_home
+        bootstrap_servers             = join(",", local.bootstrap_servers)
+        topics                        = var.topics
+        broker_name                   = each.value
+        redis_sink_properties_content = templatefile("${path.module}/properties/redis-sink.properties.tfpl", merge(var.redis_sink, { topics = var.topics }))
+        connector_properties_path     = var.connector_properties_path
+        connector_properties_content  = templatefile("${path.module}/properties/redis-sink.properties.tfpl", { bootstrap_servers = join(",", local.bootstrap_servers), group_id = var.conect.group_id })
+      }
+    )
+  }
+
+
+}

@@ -1,62 +1,20 @@
 
-# Definicao de ID de cluster
-resource "random_uuid" "kafka_cluster_id" {}
 
-# Definicao de UUID para diretorios
-resource "random_bytes" "uuid_binary" {
-  count  = var.cluster_num
-  length = 16
+
+module "kafka_cluster_server" {
+  source = "./modules/kafka-cluster"
+  controller = {port = 9093}
+  broker = {port = 9092}
 }
 
-############################# Definicao de Variaveis ##############################
-
-locals {
-  # Define dinamicamente hostnames para configuracao do
-  # quorum bootstrap server.
-  controller_quorum_bootstrap_servers = join(
-    ",",
-    [
-      for i in range(var.cluster_num) :
-      "kafka-broker-${i}:9093"
-    ]
-  )
-  bootstrap_servers = join(
-    ",",
-    [
-      for i in range(var.cluster_num) :
-      "kafka-broker-${i}:9092"
-    ]
-  )
-
-  # Define dinamicamente parametro de inicializacao de cluster
-  # e formatacao para o nos.
-  # Essse valor e compartilhado com o arquivo `startup.sh`, com
-  # intuito de fornecer antecidamente os IDs de Cluster e diretorio
-  # e compartilhar entre os nos
-  initial_controllers = join(
-    ",",
-    [
-      for i in range(var.cluster_num) :
-      "${i}@kafka-broker-${i}:9093:${
-        replace(
-          replace(
-            replace(random_bytes.uuid_binary[i].base64, "+", "-"),
-            "/", "_"
-          ),
-          "=", ""
-        )
-      }"
-  ])
-}
 
 ############################### Configuracao de VMs ###############################
 
 resource "google_compute_instance" "kafka" {
 
-  # Quantidade de nos a serem criados
+  for_each = module.kafka_cluster_server.bootstrap_servers
   count = var.cluster_num
-  # Esquema de nomeacao de nos [kafka-broker-<indice>]
-  name         = "kafka-broker-${count.index}"
+  name         = each.value
   machine_type = "e2-medium" # 2 vCPUs @ 4 GB RAM
 
   boot_disk {
