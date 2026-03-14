@@ -5,13 +5,13 @@ data "cloudinit_config" "foobar" {
   base64_encode = false
   for_each      = local.brokers
 
-  part {
+  part { # TODO Verificar init.sh
     filename     = "init.sh"
     content_type = "text/x-shellscript"
     content      = file("${path.module}/scripts/init.sh")
   }
 
-  part {
+  part { # TODO Verificar install-kafka.sh
     filename     = "install-kafka.sh"
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/scripts/install-kafka.sh",
@@ -21,7 +21,7 @@ data "cloudinit_config" "foobar" {
       }
     )
   }
-  part {
+  part { # TODO Verificar setup-kafka-storage.sh
     filename     = "setup-kafka-storage.sh"
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/scripts/format-kafka-storage.sh",
@@ -34,7 +34,7 @@ data "cloudinit_config" "foobar" {
     )
   }
 
-  part {
+  part { # TODO Verificar setup-prometheus.sh
     filename     = "setup-prometheus.sh"
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/scripts/setup-prometheus.sh",
@@ -46,7 +46,7 @@ data "cloudinit_config" "foobar" {
     )
   }
 
-  part {
+  part { # TODO Verificar setup-kafka-redis-connect.sh
     filename     = "setup-kafka-redis-connect.sh"
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/scripts/setup-kafka-redis-connect.sh",
@@ -58,7 +58,7 @@ data "cloudinit_config" "foobar" {
       }
     )
   }
-  part {
+  part { # FIXME Verificar setup-kafka-redis-connect.sh
     filename     = "setup-kafka-redis-connect.sh"
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/scripts/setup-kafka-redis-connect.sh",
