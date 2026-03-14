@@ -4,6 +4,10 @@ module "kafka_producer_app" {
   bootstrap_servers = module.kafka_cluster_server.bootstrap_servers
 }
 
+module "redis_server" {
+  source            = "./modules/redis"
+}
+
 module "kafka_cluster_server" {
   source     = "./modules/kafka-cluster"
   controller = { port = 9093 }
@@ -89,7 +93,7 @@ resource "google_compute_instance" "redis" {
     }
   }
   tags                    = ["kafka", "default-allow-internal", "deny-incoming"]
-  metadata_startup_script = file("${path.module}/scripts/redis-install.sh")
+  metadata_startup_script = module.redis_server.script
 }
 
 resource "google_compute_instance" "prometheus" {
