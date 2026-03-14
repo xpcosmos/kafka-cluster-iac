@@ -1,0 +1,8 @@
+#!/bin/bash
+
+terraform_init () {
+  mkdir -p $1
+  touch "$1/variable.tf" "$1/output.tf" "$1/main.tf"
+}
+
+terraform_init $1
