@@ -44,7 +44,7 @@ data "cloudinit_config" "foobar" {
     )
   }
 
-  part { # TODO Verificar setup-kafka-redis-connect.sh
+  part { 
     filename     = "setup-kafka-redis-connect.sh"
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/scripts/setup-kafka-redis-connect.sh",
