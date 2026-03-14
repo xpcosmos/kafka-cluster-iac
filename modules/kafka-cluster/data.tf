@@ -33,12 +33,11 @@ data "cloudinit_config" "foobar" {
     )
   }
 
-  part { # TODO Verificar setup-prometheus.sh
+  part {
     filename     = "setup-prometheus.sh"
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/scripts/setup-prometheus.sh",
       {
-        prometheus_dirname             = dirname(local.prometheus_properties_filename)
         prometheus_properties_filename = local.prometheus_properties_filename
         prometheus_properties_content  = file("${path.module}/prometheus/kafka_config.yml")
       }
