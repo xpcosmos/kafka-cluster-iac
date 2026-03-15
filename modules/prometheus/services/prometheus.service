@@ -1,0 +1,13 @@
+[Unit]
+Description=Promtheus
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=/prometheus/prometheus --config.file=/prometheus/prometheus.yml
+
+[Install]
+WantedBy=multi-user.target

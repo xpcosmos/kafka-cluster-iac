@@ -5,9 +5,9 @@ locals {
       job_name        = "kafka-broker",
       scrape_interval = "5s",
       targets         = var.brokers
-      labels          = {
+      labels = {
         env = "dev"
-        }
+      }
     }
 
   )
@@ -15,6 +15,6 @@ locals {
 
 locals {
   script = templatefile("${path.module}/scripts/prometheus-install.sh",
-    { content : local.static_configs }
+    { content : local.static_configs, service : file("${path.module}/services/prometheus.service") }
   )
 }

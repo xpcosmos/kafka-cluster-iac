@@ -42,6 +42,37 @@ locals {
 }
 
 locals {
+
+  services = {
+
+    kafka_connect = templatefile("${path.module}/services/kafka-connect.service",
+      {
+        kafka_home                     = var.kafka_home
+        connector_properties_filename  = local.connector_properties_filename
+        redis_sink_properties_filename = local.redis_sink_properties_filename
+      }
+    )
+    kafka_server = templatefile("${path.module}/services/kafka-server.service",
+      {
+        kafka_home                       = var.kafka_home
+        kafka_server_properties_filename = local.kafka_server_properties_filename
+        prometheus_properties_filename   = local.prometheus_properties_filename
+      }
+    )
+    kafka_server = templatefile("${path.module}/services/kafka-create-topic.service",
+      {
+        kafka_home        = var.kafka_home
+        bootstrap_servers = local.bootstrap_servers
+        topics            = var.topics
+      }
+    )
+
+  }
+
+
+}
+
+locals {
   configs = {
     for key, broker_name in local.brokers : broker_name => join("\n",
       [
@@ -103,13 +134,8 @@ locals {
             bootstrap_servers = local.bootstrap_servers
             topics            = var.topics
             broker_name       = broker_name
-
-            kafka_server_properties_filename = local.kafka_server_properties_filename
-            redis_sink_properties_filename   = local.redis_sink_properties_filename
-            prometheus_properties_filename   = local.prometheus_properties_filename
-            connector_properties_filename    = local.connector_properties_filename
-            redis_sink                       = var.redis_sink
-
+            redis_sink        = var.redis_sink
+            services          = local.services
           }
         )
       ]

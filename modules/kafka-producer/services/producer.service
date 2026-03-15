@@ -1,0 +1,14 @@
+[Unit]
+Description=Kafka Producer
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=${workdir}/.venv/bin/python3 ${workdir}/producer.py
+EnvironmentFile=${workdir}/.env
+
+[Install]
+WantedBy=multi-user.target

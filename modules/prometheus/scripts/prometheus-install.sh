@@ -9,4 +9,8 @@ cat << PROMETHEUS_FILE > /prometheus/prometheus.yml
 ${content}
 PROMETHEUS_FILE
 
-sudo prometheus/prometheus --config.file=/prometheus/prometheus.yml
+sudo cat << 'SERVICE' > /etc/systemd/system/prometheus.service
+${ service }
+SERVICE
+sudo systemctl daemon-reload
+sudo systemctl enable prometheus --now

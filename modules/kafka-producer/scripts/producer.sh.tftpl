@@ -20,4 +20,9 @@ BOOTSTRAP_SERVERS=${ join(",", bootstrap_servers) }
 EOT
 
 $VENVPATH/bin/pip3 install -r ${workdir}/requirements.txt
-$VENVPATH/bin/python3 ${workdir}/producer.py
+
+sudo cat << 'SERVICE' > /etc/systemd/system/producer.service
+${ service }
+SERVICE
+sudo systemctl daemon-reload
+sudo systemctl enable producer --now

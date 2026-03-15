@@ -1,10 +1,15 @@
-sudo KAFKA_OPTS="-javaagent:/jmx_prometheus_javaagent-1.5.0.jar=8091:${prometheus_properties_filename}" ${kafka_home}/bin/kafka-server-start.sh -daemon ${kafka_server_properties_filename}
-sudo ${kafka_home}/bin/kafka-topics.sh --bootstrap-server ${join(",", bootstrap_servers)} --create --topic ${topics}
-
 export TIME_TO_RETRY=2
 
+%{for key, value in services~}
+sudo cat << 'SERVICE' > /etc/systemd/system/${key}.service
+${ value }
+SERVICE
+sudo systemctl daemon-reload
+sudo systemctl enable ${key} --now
 
-sudo ${kafka_home}/bin/connect-distributed.sh -daemon  ${connector_properties_filename} ${redis_sink_properties_filename}
+%{endfor~}
+
+sudo ${kafka_home}/bin/kafka-topics.sh --bootstrap-server ${join(",", bootstrap_servers)} --create --topic ${topics}
 
 
 while [ "$(curl -o /dev/null -s -w '%%{http_code}' http://${broker_name}:8083/connectors)" -ne 200 ]

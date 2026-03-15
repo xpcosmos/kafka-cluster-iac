@@ -1,0 +1,13 @@
+[Unit]
+Description=Kafka Connect
+After=network.target kafka_server.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=${kafka_home}/bin/connect-distributed.sh ${connector_properties_filename} ${redis_sink_properties_filename}
+
+[Install]
+WantedBy=multi-user.target
