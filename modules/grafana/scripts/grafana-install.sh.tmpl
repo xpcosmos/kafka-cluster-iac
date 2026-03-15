@@ -12,5 +12,6 @@ sudo mkdir -p /var/lib/grafana/dashboards
 sudo cat << 'CONF' > /etc/grafana/provisioning/${i.filename}
 ${i.content}
 CONF
-
 %{endfor~}
+
+sudo systemctl restart grafana-server

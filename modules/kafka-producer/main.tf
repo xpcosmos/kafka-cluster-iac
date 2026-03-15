@@ -1,10 +1,10 @@
 
 locals {
   files = [
-    for f in fileset("${path.module}", "/app/**") :
+    for f in fileset("${path.module}/app", "**") :
     {
       name    = f
-      content = file("${path.module}/${f}")
+      content = file("${path.module}/app/${f}")
     }
   ]
 }
@@ -12,6 +12,6 @@ locals {
 locals {
   script = templatefile(
     "${path.module}/scripts/producer.sh.tftpl",
-    { files = local.files, workdir = var.workdir , bootstrap_servers= var.bootstrap_servers}
+    { files = local.files, workdir = var.workdir , bootstrap_servers = var.bootstrap_servers}
   )
 }

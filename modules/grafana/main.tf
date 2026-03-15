@@ -1,9 +1,9 @@
 locals {
   properties_files =[
-    for f in fileset("${path.module}", "properties/*") :
+    for f in fileset("${path.module}/properties", "**/**") :
     {
       filename = f
-      content = file("${path.module}/${f}")
+      content = file("${path.module}/properties/${f}")
     }
   ]
 }

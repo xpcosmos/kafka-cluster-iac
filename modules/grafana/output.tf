@@ -20,3 +20,7 @@ output "dashboard_dir" {
   value = var.dashboard_dir
   sensitive = true
 }
+
+output "properties_files" {
+  value = local.properties_files
+}

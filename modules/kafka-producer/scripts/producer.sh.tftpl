@@ -15,7 +15,9 @@ ${file.content}
 EOT
 %{ endfor ~}
 
-echo > "BOOTSTRAP_SERVERS=${ join(",", bootstrap_servers) }" > "${workdir}/.env"
+cat << 'EOT' > "${workdir}/.env"
+BOOTSTRAP_SERVERS=${ join(",", bootstrap_servers) }
+EOT
 
 $VENVPATH/bin/pip3 install -r ${workdir}/requirements.txt
 $VENVPATH/bin/python3 ${workdir}/producer.py

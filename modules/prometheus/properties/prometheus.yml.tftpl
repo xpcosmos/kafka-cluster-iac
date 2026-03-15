@@ -14,7 +14,7 @@ scrape_configs:
         - targets:
 
 %{for i in targets~}
-            - ${i}
+            - ${i}:8091
 %{endfor~}
 
           labels:

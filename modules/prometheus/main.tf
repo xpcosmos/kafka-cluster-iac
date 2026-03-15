@@ -2,7 +2,7 @@ locals {
   static_configs = templatefile(
     "${path.module}/properties/prometheus.yml.tftpl",
     {
-      job_name        = "kafka_cluster",
+      job_name        = "kafka-broker",
       scrape_interval = "5s",
       targets         = var.brokers
       labels          = {
