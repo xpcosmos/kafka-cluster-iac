@@ -8,6 +8,12 @@ module "redis_server" {
   source            = "./modules/redis"
 }
 
+module "prometheus" {
+  source = "./modules/prometheus"
+  brokers = module.kafka_cluster_server.brokers
+  connect_cluster_id = module.kafka_cluster_server.connect_group_id
+}
+
 module "kafka_cluster_server" {
   source     = "./modules/kafka-cluster"
   controller = { port = 9093 }
@@ -114,9 +120,7 @@ resource "google_compute_instance" "prometheus" {
     }
   }
   tags                    = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus"]
-  metadata_startup_script = <<EOT
-  ${file("${path.module}/scripts/prometheus-install.sh")}
-EOT
+  metadata_startup_script = module.prometheus.script
 }
 
 resource "google_compute_instance" "grafana" {

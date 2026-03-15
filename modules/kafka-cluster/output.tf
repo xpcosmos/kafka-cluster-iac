@@ -17,3 +17,7 @@ output "cluster_id" {
 output "cluster_instance" {
   value = local.configs
 }
+
+output "connect_group_id" {
+  value = var.connect.group_id
+}
