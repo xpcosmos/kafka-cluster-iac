@@ -8,6 +8,17 @@ module "redis_server" {
   source            = "./modules/redis"
 }
 
+module "grafana" {
+  source = "./modules/grafana"
+  dashboard_dir = "${path.module}/grafana/dashboards"
+  connection = {
+    type = "ssh"
+    user = "mikeiasoliveira"
+    private_key = "${path.module}/.keys/keys"
+    public_key = "${path.module}/.keys/keys.pub"
+  }
+}
+
 module "prometheus" {
   source = "./modules/prometheus"
   brokers = module.kafka_cluster_server.brokers
@@ -140,13 +151,17 @@ resource "google_compute_instance" "grafana" {
     }
   }
   metadata = {
-    ssh-keys = "mikeiasoliveira:${file("${path.module}/.keys/keys.pub")}"
+    ssh-keys = "${module.grafana.user}:${module.grafana.public_key}"
+
   }
+
+
+
   provisioner "remote-exec" {
     inline = ["echo 'SSH is up!'"]
   }
   provisioner "file" {
-    source      = "${path.module}/grafana/dashboards"
+    source      = module.grafana.dashboard_dir
     destination = "/tmp/dashboards"
   }
   provisioner "remote-exec" {
@@ -156,16 +171,11 @@ resource "google_compute_instance" "grafana" {
     ]
   }
   tags = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus"]
-  metadata_startup_script = templatefile("${path.module}/scripts/grafana-install.sh.tmpl",
-    {
-      dashboard_yml : file("${path.module}/grafana/provisioning/dashboards/dashboard.yml")
-      datasources_yml : file("${path.module}/grafana/provisioning/datasources/datasource.yml")
-    }
-  )
+  metadata_startup_script = module.grafana.script
   connection {
-    type        = "ssh"
-    user        = "mikeiasoliveira"
-    private_key = file("${path.module}/.keys/keys")
+    type        = module.grafana.type
+    user        = module.grafana.user
+    private_key = module.grafana.private_key
     host        = self.network_interface[0].access_config[0].nat_ip
   }
 

@@ -7,10 +7,10 @@ sudo systemctl enable grafana-server
 sudo systemctl start grafana-server
 sudo mkdir -p /var/lib/grafana/dashboards
 
-sudo cat << 'CONF' > /etc/grafana/provisioning/dashboards/default.yaml
-${dashboard_yml}
+%{for i in files~}
+
+sudo cat << 'CONF' > /etc/grafana/provisioning/${i.filename}
+${i.content}
 CONF
 
-sudo cat << 'CONF' > /etc/grafana/provisioning/datasources/default.yaml
-${datasources_yml}
-CONF
+%{endfor~}
