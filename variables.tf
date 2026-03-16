@@ -18,14 +18,6 @@ variable "user" {
   default = "mikeiasoliveira"
   type    = string
 }
-variable "private_key" {
-  default = "${path.module}/.keys/keys"
-  type    = string
-}
-variable "public_key" {
-  default = "${path.module}/.keys/keys.pub"
-  type    = string
-}
 variable "controller" {
   default = { port = 9093 }
 }

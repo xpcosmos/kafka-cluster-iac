@@ -14,8 +14,8 @@ module "grafana" {
   connection = {
     type = "ssh"
     user = var.user
-    private_key = var.private_key
-    public_key = var.public_key
+    private_key = "${path.module}/.keys/keys"
+    public_key = "${path.module}/.keys/keys.pub"
   }
 }
 
@@ -146,7 +146,7 @@ resource "google_compute_instance" "grafana" {
     }
   }
   metadata = {
-    ssh-keys = "${module.grafana.user}:${module.grafana.public_key}"
+    ssh-keys = "${module.grafana.user}:${file("${path.module}/.keys/keys.pub")}"
 
   }
 
@@ -170,7 +170,7 @@ resource "google_compute_instance" "grafana" {
   connection {
     type        = module.grafana.type
     user        = module.grafana.user
-    private_key = module.grafana.private_key
+    private_key = file("${path.module}/.keys/keys")
     host        = self.network_interface[0].access_config[0].nat_ip
   }
 
