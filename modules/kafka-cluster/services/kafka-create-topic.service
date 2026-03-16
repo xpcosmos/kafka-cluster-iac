@@ -8,9 +8,5 @@ After=network.target kafka_server.service
 Type=oneshot
 ExecStart=${kafka_home}/bin/kafka-topics.sh --bootstrap-server ${join(",", bootstrap_servers)} --create --topic ${topics}
 
-# Optional: What to do if it fails
-Restart=on-failure
-RestartSec=5s
-
 [Install]
 WantedBy=multi-user.target

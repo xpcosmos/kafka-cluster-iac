@@ -6,11 +6,9 @@ ${ value }
 SERVICE
 sudo systemctl daemon-reload
 sudo systemctl enable ${key} --now
+sudo systemctl start ${key}
 
 %{endfor~}
-
-sudo ${kafka_home}/bin/kafka-topics.sh --bootstrap-server ${join(",", bootstrap_servers)} --create --topic ${topics}
-
 
 while [ "$(curl -o /dev/null -s -w '%%{http_code}' http://${broker_name}:8083/connectors)" -ne 200 ]
 do

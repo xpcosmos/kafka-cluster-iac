@@ -59,7 +59,7 @@ locals {
         prometheus_properties_filename   = local.prometheus_properties_filename
       }
     )
-    kafka_server = templatefile("${path.module}/services/kafka-create-topic.service",
+    kafka_create_topic = templatefile("${path.module}/services/kafka-create-topic.service",
       {
         kafka_home        = var.kafka_home
         bootstrap_servers = local.bootstrap_servers
