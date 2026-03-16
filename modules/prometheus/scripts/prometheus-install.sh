@@ -14,3 +14,4 @@ ${ service }
 SERVICE
 sudo systemctl daemon-reload
 sudo systemctl enable prometheus --now
+

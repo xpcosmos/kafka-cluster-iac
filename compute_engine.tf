@@ -86,7 +86,6 @@ resource "google_compute_instance" "kafka-producer" {
   metadata_startup_script = module.kafka_producer_app.script
 
   depends_on = [
-    google_compute_instance.kafka
   ]
 }
 
@@ -127,7 +126,6 @@ resource "google_compute_instance" "prometheus" {
   }
   tags                    = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus","allow-ssh"]
   metadata_startup_script = module.prometheus.script
-  depends_on = [ google_compute_instance.kafka ]
 }
 
 resource "google_compute_instance" "grafana" {
@@ -174,5 +172,4 @@ resource "google_compute_instance" "grafana" {
     private_key = file("${path.module}/.keys/keys")
     host        = self.network_interface[0].access_config[0].nat_ip
   }
-  depends_on = [google_compute_instance.prometheus, google_compute_instance.kafka]
 }

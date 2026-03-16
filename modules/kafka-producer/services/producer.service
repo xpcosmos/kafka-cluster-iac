@@ -7,8 +7,8 @@ StartLimitIntervalSec=0
 Type=simple
 Restart=always
 RestartSec=1
-ExecStart=${workdir}/.venv/bin/python3 ${workdir}/producer.py
-EnvironmentFile=${workdir}/.env
+ExecStart=/${workdir}/.venv/bin/python3 ${workdir}/producer.py
+EnvironmentFile=/${workdir}/.env
 
 [Install]
 WantedBy=multi-user.target

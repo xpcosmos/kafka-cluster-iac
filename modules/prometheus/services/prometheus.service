@@ -6,6 +6,8 @@ StartLimitIntervalSec=0
 [Service]
 Type=simple
 Restart=always
+User=root
+Group=root
 RestartSec=1
 ExecStart=/prometheus/prometheus --config.file=/prometheus/prometheus.yml
 

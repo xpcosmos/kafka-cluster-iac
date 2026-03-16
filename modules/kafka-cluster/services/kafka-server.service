@@ -5,10 +5,14 @@ StartLimitIntervalSec=0
 
 [Service]
 Type=simple
+User=root
+Group=root
+LimitNOFILE=300000
+LimitFSIZE=infinity
 Restart=always
-RestartSec=1
 Environment="KAFKA_OPTS=-javaagent:/jmx_prometheus_javaagent-1.5.0.jar=8091:${prometheus_properties_filename}"
-ExecStart=sudo ${kafka_home}/bin/kafka-server-start.sh -daemon ${kafka_server_properties_filename}
+ExecStart=${kafka_home}/bin/kafka-server-start.sh ${kafka_server_properties_filename}
+ExecStop=${kafka_home}/bin/kafka-server-stop.sh
 
 [Install]
 WantedBy=multi-user.target
