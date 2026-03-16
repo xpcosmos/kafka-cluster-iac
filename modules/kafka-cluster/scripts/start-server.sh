@@ -5,8 +5,9 @@ sudo cat << 'SERVICE' > /etc/systemd/system/${key}.service
 ${ value }
 SERVICE
 sudo systemctl daemon-reload
-sudo systemctl enable ${key} --now
+sudo systemctl enable ${key}
 sudo systemctl start ${key}
+sudo systemctl restart ${key}
 
 %{endfor~}
 

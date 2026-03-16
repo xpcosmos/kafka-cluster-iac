@@ -7,7 +7,7 @@ StartLimitIntervalSec=0
 Type=simple
 Restart=always
 RestartSec=1
-ExecStart=${kafka_home}/bin/connect-distributed.sh ${connector_properties_filename} ${redis_sink_properties_filename}
+ExecStart=sudo ${kafka_home}/bin/connect-distributed.sh -daemon ${connector_properties_filename} ${redis_sink_properties_filename}
 
 [Install]
 WantedBy=multi-user.target

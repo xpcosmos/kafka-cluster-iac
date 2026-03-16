@@ -5,39 +5,34 @@ module "kafka_producer_app" {
 }
 
 module "redis_server" {
-  source            = "./modules/redis"
+  source = "./modules/redis"
 }
 
 module "grafana" {
-  source = "./modules/grafana"
+  source        = "./modules/grafana"
   dashboard_dir = "${path.module}/grafana/dashboards"
   connection = {
-    type = "ssh"
-    user = "mikeiasoliveira"
-    private_key = "${path.module}/.keys/keys"
-    public_key = "${path.module}/.keys/keys.pub"
+    type        = "ssh"
+    user        = var.user
+    private_key = var.private_key
+    public_key  = var.public_key
   }
 }
 
 module "prometheus" {
-  source = "./modules/prometheus"
-  brokers = module.kafka_cluster_server.brokers
+  source             = "./modules/prometheus"
+  brokers            = module.kafka_cluster_server.brokers
   connect_cluster_id = module.kafka_cluster_server.connect_group_id
 }
 
 module "kafka_cluster_server" {
-  source     = "./modules/kafka-cluster"
-  controller = { port = 9093 }
-  broker     = { port = 9092 }
-  connect = {
-    group_id = "kafka_connect"
-  }
-  topics = "teste"
-  redis_sink = {
-    host = "redis"
-    port = 6379
-  }
-  cluster_size = 3
+  source       = "./modules/kafka-cluster"
+  controller   = var.controller
+  broker       = var.broker
+  connect      = var.connect
+  topics       = var.topics
+  redis_sink   = var.redis_sink
+  cluster_size = var.cluster_size
 }
 
 
@@ -62,7 +57,7 @@ resource "google_compute_instance" "kafka" {
   }
 
   # Tags para permitir configuracao de acesso interno entre VMs
-  tags = ["kafka", "default-allow-internal", "deny-incoming"]
+  tags = ["kafka", "default-allow-internal", "deny-incoming","allow-ssh"]
 
   # Definicao de script de Inicializacao. Esse script ira ser rodado
   # no momento em que VM iniciar. Algumas variaveis sao definidas aqui e compartilhadas
@@ -86,7 +81,7 @@ resource "google_compute_instance" "kafka-producer" {
       type  = "pd-standard"
     }
   }
-  tags = ["kafka", "default-allow-internal", "deny-incoming"]
+  tags = ["kafka", "default-allow-internal", "deny-incoming","allow-ssh"]
 
   metadata_startup_script = module.kafka_producer_app.script
 
@@ -109,7 +104,7 @@ resource "google_compute_instance" "redis" {
       type  = "pd-standard"
     }
   }
-  tags                    = ["kafka", "default-allow-internal", "deny-incoming"]
+  tags                    = ["kafka", "default-allow-internal", "deny-incoming","allow-ssh"]
   metadata_startup_script = module.redis_server.script
 }
 
@@ -130,8 +125,9 @@ resource "google_compute_instance" "prometheus" {
       type  = "pd-standard"
     }
   }
-  tags                    = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus"]
+  tags                    = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus","allow-ssh"]
   metadata_startup_script = module.prometheus.script
+  depends_on = [ google_compute_instance.kafka ]
 }
 
 resource "google_compute_instance" "grafana" {
@@ -170,7 +166,7 @@ resource "google_compute_instance" "grafana" {
       "sudo mv /tmp/dashboards /var/lib/grafana/dashboards",
     ]
   }
-  tags = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus"]
+  tags                    = ["kafka", "default-allow-internal", "https-server", "http-server", "allow-in-prometheus","allow-ssh"]
   metadata_startup_script = module.grafana.script
   connection {
     type        = module.grafana.type
@@ -178,5 +174,5 @@ resource "google_compute_instance" "grafana" {
     private_key = module.grafana.private_key
     host        = self.network_interface[0].access_config[0].nat_ip
   }
-
+  depends_on = [google_compute_instance.prometheus, google_compute_instance.kafka]
 }

@@ -46,7 +46,7 @@ resource "google_compute_firewall" "deny-incoming" {
 resource "google_compute_firewall" "kafka-ssh" {
   name        = "kafka-shh"
   network     = google_compute_network.kafka_network.id
-  source_tags = ["ssh"]
+  source_tags = ["ssh","allow-ssh"]
   priority    = 0
 
   allow {
