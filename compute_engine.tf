@@ -13,9 +13,9 @@ module "grafana" {
   dashboard_dir = "${path.module}/grafana/dashboards"
   connection = {
     type = "ssh"
-    user = "mikeiasoliveira"
-    private_key = "${path.module}/.keys/keys"
-    public_key = "${path.module}/.keys/keys.pub"
+    user = var.user
+    private_key = var.private_key
+    public_key = var.public_key
   }
 }
 
@@ -27,17 +27,12 @@ module "prometheus" {
 
 module "kafka_cluster_server" {
   source     = "./modules/kafka-cluster"
-  controller = { port = 9093 }
-  broker     = { port = 9092 }
-  connect = {
-    group_id = "kafka_connect"
-  }
-  topics = "teste"
-  redis_sink = {
-    host = "redis"
-    port = 6379
-  }
-  cluster_size = 3
+  controller = var.controller
+  broker     = var.broker
+  connect = var.connect
+  topics = var.topics
+  redis_sink = var.redis_sink
+  cluster_size = var.cluster_size
 }
 
 
