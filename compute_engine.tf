@@ -12,10 +12,10 @@ module "grafana" {
   source        = "./modules/grafana"
   dashboard_dir = "${path.module}/grafana/dashboards"
   connection = {
-    type        = "ssh"
-    user        = var.user
-    private_key = var.private_key
-    public_key  = var.public_key
+    type = "ssh"
+    user = var.user
+    private_key = "${path.module}/.keys/keys"
+    public_key = "${path.module}/.keys/keys.pub"
   }
 }
 
@@ -26,12 +26,12 @@ module "prometheus" {
 }
 
 module "kafka_cluster_server" {
-  source       = "./modules/kafka-cluster"
-  controller   = var.controller
-  broker       = var.broker
-  connect      = var.connect
-  topics       = var.topics
-  redis_sink   = var.redis_sink
+  source     = "./modules/kafka-cluster"
+  controller = var.controller
+  broker     = var.broker
+  connect = var.connect
+  topics = var.topics
+  redis_sink = var.redis_sink
   cluster_size = var.cluster_size
 }
 
@@ -147,7 +147,7 @@ resource "google_compute_instance" "grafana" {
     }
   }
   metadata = {
-    ssh-keys = "${module.grafana.user}:${module.grafana.public_key}"
+    ssh-keys = "${module.grafana.user}:${file("${path.module}/.keys/keys.pub")}"
 
   }
 
@@ -171,7 +171,7 @@ resource "google_compute_instance" "grafana" {
   connection {
     type        = module.grafana.type
     user        = module.grafana.user
-    private_key = module.grafana.private_key
+    private_key = file("${path.module}/.keys/keys")
     host        = self.network_interface[0].access_config[0].nat_ip
   }
   depends_on = [google_compute_instance.prometheus, google_compute_instance.kafka]
